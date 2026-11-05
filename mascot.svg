@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="137 120 770 770">
+  <title>Anqui mascot, waving, for "no decks" (light)</title>
+  <!-- Drawn on the app icon's 1024 grid (docs/design/icon) and cropped around the cat. -->
+  <!-- The tail curls out from behind the card. -->
+  <path d="M300 838 C214 850 172 816 172 764 C172 724 198 704 192 680 C188 664 174 662 168 674" fill="none" stroke="#0B2540" stroke-width="54" stroke-linecap="round"/>
+  <path d="M300 838 C214 850 172 816 172 764 C172 724 198 704 192 680 C188 664 174 662 168 674" fill="none" stroke="#FFFFFF" stroke-width="34" stroke-linecap="round"/>
+  <path d="M182 770 q4 34 40 50" fill="none" stroke="#E3EEF6" stroke-width="10" stroke-linecap="round"/>
+  <g transform="rotate(6 512 470)">
+    <!-- Head with its outline; the round-joined stroke softens the ear tips, as in the icon. -->
+    <path d="M262.4 435.2 L300.8 179.2 L454.4 313.6 Q512 297.6 569.6 313.6 L723.2 179.2 L761.6 435.2 Q793.6 550.4 761.6 614.4 L262.4 614.4 Q230.4 550.4 262.4 435.2 Z" fill="#0B2540" stroke="#0B2540" stroke-width="36" stroke-linejoin="round"/>
+    <path d="M262.4 435.2 L300.8 179.2 L454.4 313.6 Q512 297.6 569.6 313.6 L723.2 179.2 L761.6 435.2 Q793.6 550.4 761.6 614.4 L262.4 614.4 Q230.4 550.4 262.4 435.2 Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="16" stroke-linejoin="round"/>
+    <path d="M320 250 L388 306 Q350 316 312 338 Z M704 250 L636 306 Q674 316 712 338 Z" fill="#F9A8C4" stroke="#F9A8C4" stroke-width="14" stroke-linejoin="round"/>
+    <circle cx="339.2" cy="505.6" r="32" fill="#F9A8C4"/>
+    <circle cx="684.8" cy="505.6" r="32" fill="#F9A8C4"/>
+    <!-- Open round eyes with highlights, and the small mouth. -->
+    <circle cx="409.6" cy="430" r="26" fill="#0B2540"/>
+    <circle cx="614.4" cy="430" r="26" fill="#0B2540"/>
+    <circle cx="417.6" cy="421" r="9" fill="#FFFFFF"/>
+    <circle cx="622.4" cy="421" r="9" fill="#FFFFFF"/>
+    <circle cx="400.6" cy="440" r="4" fill="#FFFFFF"/>
+    <circle cx="605.4" cy="440" r="4" fill="#FFFFFF"/>
+    <path d="M486.4 499.2 q12.8 19.2 25.6 0 q12.8 19.2 25.6 0" fill="none" stroke="#0B2540" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <!-- The card, shaded along its bottom and under the chin. -->
+  <rect x="243.2" y="563.2" width="537.6" height="294.4" rx="64" fill="#0B2540" stroke="#0B2540" stroke-width="24"/>
+  <rect x="243.2" y="563.2" width="537.6" height="294.4" rx="64" fill="#E0F2FE"/>
+  <path d="M243.2 806 Q512 790 780.8 806 V793.6 A64 64 0 0 1 716.8 857.6 H307.2 A64 64 0 0 1 243.2 793.6 Z" fill="#C5E3F6"/>
+  <path d="M420 563.2 H604 Q598 600 512 602 Q426 600 420 563.2 Z" fill="#C5E3F6"/>
+  <circle cx="364.8" cy="582.4" r="54.8" fill="#0B2540"/>
+  <circle cx="364.8" cy="582.4" r="44.8" fill="#FFFFFF"/>
+  <path d="M349.8 622.4 v-16 M379.8 622.4 v-16" fill="none" stroke="#0B2540" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="792" cy="430" r="54.8" fill="#0B2540"/>
+  <circle cx="792" cy="430" r="44.8" fill="#FFFFFF"/>
+  <!-- Wave lines beside the raised paw, in two tones. -->
+  <path d="M838 352 q22 20 22 48" fill="none" stroke="#0369A1" stroke-width="16" stroke-linecap="round"/>
+  <path d="M862 316 q36 34 36 82" fill="none" stroke="#38BDF8" stroke-width="14" stroke-linecap="round"/>
+</svg>

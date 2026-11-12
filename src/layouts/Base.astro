@@ -1,0 +1,78 @@
+---
+import '@fontsource-variable/bricolage-grotesque';
+import '@fontsource/zen-maru-gothic/500.css';
+import '@fontsource/zen-maru-gothic/700.css';
+import '@fontsource/zen-maru-gothic/900.css';
+import '../styles/global.css';
+import { getImage } from 'astro:assets';
+import iconSrc from '../assets/icon.png';
+import { strings, href, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+  page?: '' | 'privacy' | 'support' | 'credits';
+  title?: string;
+}
+const { lang, page = '', title } = Astro.props;
+const t = strings[lang];
+const other: Lang = lang === 'es' ? 'en' : 'es';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const icon = await getImage({ src: iconSrc, width: 96, format: 'webp' });
+const canonical = new URL(href(lang, page), Astro.site);
+---
+
+<!doctype html>
+<html lang={t.htmlLang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title ? `${title} · Anqui` : t.title}</title>
+    <meta name="description" content={t.description} />
+    <meta name="apple-itunes-app" content="app-id=6828231360" />
+    <link rel="canonical" href={canonical} />
+    <link rel="alternate" hreflang="es" href={new URL(href('es', page), Astro.site)} />
+    <link rel="alternate" hreflang="en" href={new URL(href('en', page), Astro.site)} />
+    <link rel="icon" type="image/png" href={`${base}/favicon.png`} />
+    <link rel="apple-touch-icon" href={`${base}/apple-touch-icon.png`} />
+    <meta property="og:title" content={t.title} />
+    <meta property="og:description" content={t.description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content={new URL(`${base}/apple-touch-icon.png`, Astro.site)} />
+    <!-- Apply the saved theme before first paint. -->
+    <script is:inline>
+      try {
+        var th = localStorage.getItem('anqui-theme');
+        if (th && th !== 'anqui') document.documentElement.dataset.theme = th;
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap">
+        <a class="brand" href={href(lang)}>
+          <img src={icon.src} alt="" width="32" height="32" />
+          Anqui <span lang="ja">暗記</span>
+        </a>
+        <nav>
+          <a href={href(lang, 'privacy')}>{t.nav.privacy}</a>
+          <a href={href(lang, 'support')}>{t.nav.support}</a>
+          <a href={href(lang, 'credits')}>{t.nav.credits}</a>
+        </nav>
+        <a class="lang" href={href(other, page)} hreflang={other} lang={other}>{t.nav.other}</a>
+      </div>
+    </header>
+    <slot />
+    <footer class="site-footer">
+      <div class="wrap">
+        <nav>
+          <a href={href(lang)}>{t.nav.home}</a>
+          <a href={href(lang, 'privacy')}>{t.nav.privacy}</a>
+          <a href={href(lang, 'support')}>{t.nav.support}</a>
+          <a href={href(lang, 'credits')}>{t.nav.credits}</a>
+        </nav>
+        <p>{t.footer.made}</p>
+        <p>Anqui <span lang="ja">暗記</span></p>
+      </div>
+    </footer>
+  </body>
+</html>

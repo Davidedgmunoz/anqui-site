@@ -1,0 +1,20 @@
+---
+import { strings, APP_STORE_URL, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+}
+const t = strings[Astro.props.lang].store;
+---
+
+<div class="store-row">
+  <a class="store" href={APP_STORE_URL} rel="noopener">
+    <small>{t.small}</small>
+    <b>{t.big}</b>
+  </a>
+  <!-- Placeholder until the Mac version ships: swap for a link to the same App Store record. -->
+  <span class="store soon" aria-disabled="true">
+    <small>{t.soon}</small>
+    <b>{t.mac}</b>
+  </span>
+</div>

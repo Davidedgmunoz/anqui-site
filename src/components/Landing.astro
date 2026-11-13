@@ -1,0 +1,474 @@
+---
+import { getImage } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import StoreButtons from './StoreButtons.astro';
+import '../styles/landing.css';
+import { strings, href, APP_STORE_URL, type Lang } from '../i18n';
+import shotEs from '../assets/shots/decks-es.png';
+import shotEn from '../assets/shots/decks-en.png';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = strings[lang];
+
+const mascotFiles = import.meta.glob<{ default: ImageMetadata }>('../assets/mascot/*.png', { eager: true });
+const medalFiles = import.meta.glob<{ default: ImageMetadata }>('../assets/medals/*.png', { eager: true });
+const name = (path: string) => path.split('/').pop()!.replace('.png', '');
+
+const mascot: Record<string, string> = {};
+for (const [path, mod] of Object.entries(mascotFiles)) {
+  mascot[name(path)] = (await getImage({ src: mod.default, width: 480, format: 'webp' })).src;
+}
+const medalOrder = ['streak5', 'streak30', 'streak100', 'streak365', 'reviews1000', 'reviews10000'];
+const medals: string[] = [];
+for (const id of medalOrder) {
+  const mod = medalFiles[`../assets/medals/${id}.png`];
+  medals.push((await getImage({ src: mod.default, width: 280, format: 'webp' })).src);
+}
+const shot = await getImage({ src: lang === 'es' ? shotEs : shotEn, width: 720, format: 'webp' });
+
+const themes = ['anqui', 'sakura', 'matcha', 'noche', 'neon'] as const;
+const floaters = ['あ', '学', 'ね', '猫', 'カ', '記', 'を', '語', 'ん', '暗'];
+// Everything the client script needs that depends on the language or on hashed asset URLs.
+const data = { mascot, cards: t.cards, demo: t.demo, type: t.jp.type, days: t.fsrs.days, companion: t.companion };
+
+// Gojuon chart, one column per consonant; null leaves the gap the traditional table has.
+const kanaColumns: [string, string][] = [
+  ['あいうえお', 'a i u e o'], ['かきくけこ', 'ka ki ku ke ko'], ['さしすせそ', 'sa shi su se so'], ['たちつてと', 'ta chi tsu te to'],
+  ['なにぬねの', 'na ni nu ne no'], ['はひふへほ', 'ha hi fu he ho'], ['まみむめも', 'ma mi mu me mo'], ['や＿ゆ＿よ', 'ya _ yu _ yo'],
+  ['らりるれろ', 'ra ri ru re ro'], ['わ＿＿＿を', 'wa _ _ _ wo'], ['ん＿＿＿＿', 'n _ _ _ _'],
+];
+const kana = kanaColumns.flatMap(([chars, romaji]) => {
+  const r = romaji.split(' ');
+  return [...chars].map((h, i) => (h === '＿' ? null : { h, k: String.fromCodePoint(h.codePointAt(0)! + 0x60), r: r[i] }));
+});
+const stopClass = ['live', 'testing', 'dev', 'later'];
+
+// schema.org structured data; no price, offers or ratings on purpose.
+const siteBase = import.meta.env.BASE_URL.replace(/\/$/, '');
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Anqui',
+  applicationCategory: 'EducationalApplication',
+  operatingSystem: 'iOS, iPadOS',
+  description: t.description,
+  inLanguage: lang,
+  url: new URL(href(lang), Astro.site).href,
+  downloadUrl: APP_STORE_URL,
+  installUrl: APP_STORE_URL,
+  image: new URL(`${siteBase}/og-${lang}.png`, Astro.site).href,
+};
+---
+
+<Base lang={lang}>
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />
+  <main>
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-kanji" aria-hidden="true" lang="ja">暗記</div>
+      <div class="floaters" aria-hidden="true" lang="ja">
+        {floaters.map((c, i) => <span class="floater" style={`--i:${i};--x:${4 + i * 9.6}%;--y:${10 + ((i * 37) % 78)}%`} data-depth={(i % 4) + 1}>{c}</span>)}
+      </div>
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">{t.hero.eyebrow}</p>
+          <h1>
+            <span class="line">{t.hero.h1a}</span>
+            <span class="line"><em>{t.hero.h1b}</em></span>
+          </h1>
+          <p class="lead">{t.hero.lead}</p>
+          <StoreButtons lang={lang} />
+          <p class="platforms">{t.hero.platforms}</p>
+        </div>
+        <div class="hero-stage">
+          <div class="phone" id="hero-phone">
+            <img src={shot.src} alt={t.hero.shotAlt} width="720" height="1564" fetchpriority="high" />
+          </div>
+          <button class="hero-cat" id="hero-cat" type="button" aria-label={t.hero.hint}>
+            <span class="bubble" id="hero-bubble" lang="ja" aria-hidden="true">にゃ！</span>
+            <img src={mascot.waving} alt="" width="480" height="480" />
+            <span class="tap-hint" aria-hidden="true">{t.hero.hint}</span>
+          </button>
+        </div>
+      </div>
+      <svg class="hero-edge" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 80V34c180 40 340 46 520 22S900-6 1100 10s250 44 340 30v40z" fill="var(--bg)"></path>
+      </svg>
+    </section>
+
+    <!-- Live review demo -->
+    <section class="section demo" id="demo">
+      <div class="wrap">
+        <header class="section-head reveal">
+          <p class="kicker">{t.demo.kicker}</p>
+          <h2>{t.demo.h2}</h2>
+          <p>{t.demo.lead}</p>
+        </header>
+        <div class="demo-grid reveal">
+          <div class="demo-side">
+            <div class="demo-cat">
+              <span class="bubble show" id="demo-bubble"><b lang="ja"></b><i></i></span>
+              <img id="demo-mascot" src={mascot.studying} alt="" width="480" height="480" />
+            </div>
+          </div>
+          <div class="review" id="review">
+            <div class="review-top">
+              <label class="switch">
+                <input type="checkbox" id="furigana-toggle" checked />
+                <span class="track"></span>
+                {t.demo.furigana}
+              </label>
+            </div>
+            <div class="card-stage">
+              <!-- Mirrors the app's review card: one raised surface that turns over and then shows
+                   the answer under the question. -->
+              <div class="flashcard" id="flashcard" tabindex="0" role="button" aria-label={t.demo.flip}>
+                <p class="counts" aria-label={t.demo.left}>
+                  <span class="c-new"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4z" fill="currentColor"></path></svg><b id="count-new">0</b></span>
+                  <span class="c-learn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a8 8 0 1 0 8 8" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path></svg><b id="count-learn">0</b></span>
+                  <span class="c-review"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg><b id="count-review">0</b></span>
+                </p>
+                <div class="card-body" id="card-body">
+                  <p class="expr" id="card-front" lang="ja"></p>
+                  <div class="answer" id="card-answer">
+                    <hr />
+                    <p class="meaning" id="card-meaning"></p>
+                    <p class="example"><span id="card-ex" lang="ja"></span><small id="card-ext"></small></p>
+                    <button class="glass speak" id="speak" type="button" aria-label={t.demo.listen}>
+                      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                        <path
+                          d="M4 9v6h4l5 4V5L8 9H4zm12.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"
+                          fill="currentColor"></path>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="done" id="review-done" hidden>
+                  <h3>{t.demo.doneTitle}</h3>
+                  <p>{t.demo.doneText}</p>
+                  <button class="glass prominent" id="review-reset" type="button">{t.demo.again}</button>
+                </div>
+              </div>
+            </div>
+            <div class="review-actions">
+              <button class="glass prominent wide" id="flip-btn" type="button">{t.demo.flip}</button>
+              <div class="grades" id="grades" hidden>
+                {
+                  t.demo.grades.map((g, i) => (
+                    <button type="button" class={`glass grade g${i}`} data-grade={i}>
+                      <b>{g}</b>
+                      <small />
+                    </button>
+                  ))
+                }
+              </div>
+            </div>
+            <p class="keys">{t.demo.keys}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FSRS forgetting curve -->
+    <section class="section fsrs" id="fsrs">
+      <div class="wrap fsrs-grid">
+        <header class="section-head left reveal">
+          <p class="kicker">{t.fsrs.kicker}</p>
+          <h2>{t.fsrs.h2}</h2>
+          <p>{t.fsrs.lead}</p>
+        </header>
+        <div class="curve-card reveal">
+          <div class="curve-stats">
+            <p><b id="curve-reviews">0</b><span>{t.fsrs.reviews}</span></p>
+            <p><b id="curve-next">0</b><span>{t.fsrs.next}</span></p>
+          </div>
+          <svg id="curve" viewBox="0 0 640 280" role="img" aria-label={t.fsrs.h2}>
+            <g id="curve-gridlines"></g>
+            <line id="curve-target" class="target" x1="40" x2="630"></line>
+            <path id="curve-area" class="area"></path>
+            <path id="curve-path" class="path"></path>
+            <g id="curve-dots"></g>
+            <text class="axis" x="630" y="272" text-anchor="end">120 {t.fsrs.axis}</text>
+            <text class="axis" x="40" y="272">0</text>
+          </svg>
+          <label class="range">
+            <span>{t.fsrs.slider} <b id="curve-value">90%</b></span>
+            <input type="range" id="curve-range" min="75" max="97" value="90" step="1" />
+            <span class="range-ends"><small>{t.fsrs.low}</small><small>{t.fsrs.high}</small></span>
+          </label>
+          <p class="fine">{t.fsrs.note}</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Built for Japanese -->
+    <section class="section jp" id="japanese">
+      <div class="wrap">
+        <header class="section-head reveal">
+          <p class="kicker">{t.jp.kicker}</p>
+          <h2>{t.jp.h2}</h2>
+        </header>
+        <div class="jp-grid">
+          <article class="tile tile-fan reveal">
+            <div class="fan" id="fan" aria-hidden="true">
+              <div class="mini m1"><small>{t.jp.n1.labels[0]}</small><b lang="ja">猫</b></div>
+              <div class="mini m2"><small>{t.jp.n1.labels[1]}</small><b>{t.cards[1].meaning}</b></div>
+              <div class="mini m3">
+                <small>{t.jp.n1.labels[2]}</small>
+                <b><svg viewBox="0 0 24 24" width="34" height="34"><path d="M4 9v6h4l5 4V5L8 9H4zm12.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4z" fill="currentColor"></path></svg></b>
+              </div>
+            </div>
+            <h3>{t.jp.n1.t}</h3>
+            <p>{t.jp.n1.d}</p>
+          </article>
+          <article class="tile tile-furi reveal">
+            <p class="furi-demo" lang="ja" aria-hidden="true">
+              <span><ruby>日本語<rt>にほんご</rt></ruby>を<ruby>勉強<rt>べんきょう</rt></ruby>する</span>
+            </p>
+            <h3>{t.jp.n2.t}</h3>
+            <p>{t.jp.n2.d}</p>
+          </article>
+          <article class="tile tile-voice reveal">
+            <div class="voice" aria-hidden="true">
+              <span lang="ja">たべる</span>
+              <div class="bars">{Array.from({ length: 9 }).map((_, i) => <i style={`--i:${i}`} />)}</div>
+            </div>
+            <h3>{t.jp.n3.t}</h3>
+            <p>{t.jp.n3.d}</p>
+          </article>
+          <article class="tile tile-type reveal">
+            <div>
+              <h3>{t.jp.type.t}</h3>
+              <p>{t.jp.type.d}</p>
+            </div>
+            <div class="typing">
+              <label for="kana-input">{t.jp.type.label}</label>
+              <input
+                id="kana-input"
+                type="text"
+                lang="ja"
+                autocomplete="off"
+                autocapitalize="off"
+                spellcheck="false"
+                placeholder={t.jp.type.placeholder}
+              />
+              <p class="diff" id="kana-diff" lang="ja" aria-live="polite"></p>
+              <p class="fine" id="kana-hint">{t.jp.type.hint}</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Habit -->
+    <section class="section habit" id="habit">
+      <div class="wrap habit-grid">
+        <header class="section-head left reveal">
+          <p class="kicker">{t.habit.kicker}</p>
+          <h2>{t.habit.h2}</h2>
+          <p>{t.habit.lead}</p>
+          <p class="streak"><b id="streak-count" data-to="30">0</b><span>{t.habit.streak}</span></p>
+          <div class="widgets" id="widgets" aria-hidden="true">
+            <div class="widget w-rings">
+              <svg viewBox="0 0 120 120">
+                <circle class="ring-bg" cx="60" cy="60" r="52"></circle>
+                <circle class="ring r-new" id="ring-new" cx="60" cy="60" r="52" pathLength="100"></circle>
+                <circle class="ring-bg" cx="60" cy="60" r="40"></circle>
+                <circle class="ring r-learn" id="ring-learn" cx="60" cy="60" r="40" pathLength="100"></circle>
+                <circle class="ring-bg" cx="60" cy="60" r="28"></circle>
+                <circle class="ring r-review" id="ring-review" cx="60" cy="60" r="28" pathLength="100"></circle>
+                <path class="flame" d="M60 45c5 6 9 9 9 15a9 9 0 0 1-18 0c0-3 1-5 3-7 0 3 2 4 3 4 1-4 1-8 3-12z"></path>
+              </svg>
+              <div>
+                <small>{t.widgets.today}</small>
+                <b id="widget-due">{t.cards.length}</b>
+                <span class="w-row"><i class="c-new" id="widget-new">{t.cards.length}</i><i class="c-learn" id="widget-learn">0</i><i class="c-review">0</i></span>
+              </div>
+            </div>
+            <div class="widget w-word">
+              <small>{t.widgets.word}</small>
+              <b id="widget-word" lang="ja"></b>
+              <span id="widget-meaning"></span>
+            </div>
+          </div>
+          <p class="fine">{t.widgets.hint}</p>
+        </header>
+        <div class="reveal">
+          <div class="heatmap" id="heatmap" aria-hidden="true"></div>
+          <p class="fine medals-title">{t.habit.medals}</p>
+          <div class="medals" id="medals">
+            {medals.map((src) => <div class="medal"><img src={src} alt="" width="280" height="280" loading="lazy" /></div>)}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Kana chart (1.1) -->
+    <section class="section kana" id="kana">
+      <div class="wrap">
+        <header class="section-head reveal">
+          <p class="kicker soon">{t.kana.kicker}</p>
+          <h2>{t.kana.h2}</h2>
+          <p>{t.kana.lead}</p>
+        </header>
+        <div class="segmented reveal" role="radiogroup" aria-label={t.kana.h2}>
+          <button type="button" role="radio" aria-checked="true" data-script="h">{t.kana.hira}</button>
+          <button type="button" role="radio" aria-checked="false" data-script="k">{t.kana.kata}</button>
+        </div>
+        <div class="kana-grid reveal" id="kana-grid" lang="ja">
+          {
+            kana.map((c) =>
+              c ? (
+                <button type="button" class="kana-cell" data-h={c.h} data-k={c.k} aria-label={`${c.h} ${c.r}`}>
+                  <span class="ch">{c.h}</span>
+                  <span class="ro" lang="en">{c.r}</span>
+                </button>
+              ) : (
+                <span class="kana-gap" />
+              ),
+            )
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Themes -->
+    <section class="section themes" id="themes">
+      <div class="wrap">
+        <header class="section-head reveal">
+          <p class="kicker">{t.themes.kicker}</p>
+          <h2>{t.themes.h2}</h2>
+          <p>{t.themes.lead}</p>
+        </header>
+        <div class="swatches reveal" role="radiogroup" aria-label={t.themes.kicker}>
+          {
+            themes.map((id) => (
+              <button type="button" class="swatch" role="radio" aria-checked="false" data-theme-id={id}>
+                <span class={`chip chip-${id}`} />
+                {t.themes.names[id]}
+              </button>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Everything else -->
+    <section class="section more" id="more">
+      <div class="wrap">
+        <header class="section-head reveal"><h2>{t.more.h2}</h2></header>
+        <div class="more-grid">
+          {
+            t.more.items.map((it) => (
+              <article class="tile reveal">
+                <span class="glyph" aria-hidden="true">{it.k}</span>
+                <h3>{it.t}</h3>
+                <p>{it.d}</p>
+              </article>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Roadmap -->
+    <section class="section roadmap" id="roadmap">
+      <div class="wrap">
+        <header class="section-head reveal">
+          <p class="kicker">{t.road.kicker}</p>
+          <h2>{t.road.h2}</h2>
+          <p>{t.road.lead}</p>
+        </header>
+        <!-- A train line: one station per version, and the cat rides it as the page scrolls. -->
+        <div class="rail" id="rail">
+          <div class="track" aria-hidden="true">
+            <i class="track-done"></i>
+            <img class="train" src={mascot.fixing} alt="" width="480" height="480" loading="lazy" />
+          </div>
+          <ol class="stops">
+            {
+              t.road.stops.map((stop, i) => (
+                <li class={`stop ${stopClass[i]}`}>
+                  <span class="station" aria-hidden="true" />
+                  <p class="version" lang={i === 3 ? 'ja' : undefined}>{stop.v}</p>
+                  <p class="state">{stop.state}</p>
+                  <ul>{stop.items.map((item) => <li>{item}</li>)}</ul>
+                </li>
+              ))
+            }
+          </ol>
+        </div>
+        <div class="devices">
+          <article class="tile device reveal">
+            <div class="watch" aria-hidden="true">
+              <div class="watch-screen">
+                <small>Anqui</small>
+                <b lang="ja"><ruby>猫<rt>ねこ</rt></ruby></b>
+                <span>{t.cards[1].meaning}</span>
+                <i>30 · {t.road.watch.streak}</i>
+              </div>
+            </div>
+            <div>
+              <p class="kicker soon">{t.road.soon}</p>
+              <h3>{t.road.watch.t}</h3>
+              <p>{t.road.watch.d}</p>
+            </div>
+          </article>
+          <article class="tile device reveal">
+            <div class="macwin" aria-hidden="true">
+              <div class="macbar"><i></i><i></i><i></i></div>
+              <img src={mascot.fixing} alt="" width="480" height="480" loading="lazy" />
+              <span>{t.road.mac.wip}</span>
+            </div>
+            <div>
+              <p class="kicker soon">{t.road.soon}</p>
+              <h3>{t.road.mac.t}</h3>
+              <p>{t.road.mac.d}</p>
+            </div>
+          </article>
+        </div>
+        <p class="fine road-note">{t.road.note}</p>
+      </div>
+    </section>
+
+    <!-- Privacy -->
+    <section class="section privacy" id="privacy">
+      <div class="wrap privacy-grid">
+        <img class="privacy-cat reveal" src={mascot.key} alt="" width="480" height="480" loading="lazy" />
+        <div>
+          <header class="section-head left reveal">
+            <p class="kicker">{t.privacy.kicker}</p>
+            <h2>{t.privacy.h2}</h2>
+            <p>{t.privacy.lead}</p>
+          </header>
+          <ul class="stamps" id="stamps">
+            {t.privacy.stamps.map((s, i) => <li class="stamp" style={`--r:${[-7, 4, -3, 6][i]}deg`}>{s}</li>)}
+          </ul>
+          <p class="reveal"><a class="text-link" href={href(lang, 'privacy')}>{t.privacy.link} →</a></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Final call -->
+    <section class="cta">
+      <div class="wrap">
+        <img class="cta-cat" src={mascot.happy} alt="" width="480" height="480" loading="lazy" />
+        <h2>{t.cta.h2}</h2>
+        <p>{t.cta.lead}</p>
+        <StoreButtons lang={lang} />
+      </div>
+    </section>
+    <!-- The cat that follows the reader down the page. -->
+    <div class="companion" id="companion" aria-hidden="true">
+      <span class="bubble"><b lang="ja"></b><i></i></span>
+      <img src={mascot.waving} alt="" width="480" height="480" />
+    </div>
+  </main>
+  <script type="application/json" id="anqui-data" set:html={JSON.stringify(data)} />
+  <script>
+    import '../scripts/landing.ts';
+  </script>
+</Base>

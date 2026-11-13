@@ -1,0 +1,103 @@
+/* Palettes mirror the app's themes (AnquiKit AppTheme). The site adds its own paper background for
+   the Anqui theme, where the app uses the system one. */
+:root {
+  --accent: #0369a1;
+  --on-accent: #ffffff;
+  --bg: #fbf9f4;
+  --card: #eef4f8;
+  --ink: #0b2540;
+  --muted: #56677a;
+  --highlight: #0369a1;
+  --pink: #f6a5c0;
+  --line: color-mix(in srgb, var(--ink) 14%, transparent);
+  --display: 'Bricolage Grotesque Variable', 'Zen Maru Gothic', system-ui, sans-serif;
+  --body: 'Zen Maru Gothic', -apple-system, 'Hiragino Maru Gothic ProN', 'Segoe UI', sans-serif;
+  --radius: 24px;
+  color-scheme: light;
+}
+:root[data-theme='sakura'] { --accent: #be185d; --bg: #fff7fa; --card: #fce7f1; --ink: #3b1526; --muted: #6b4a57; --highlight: #be185d; }
+:root[data-theme='matcha'] { --accent: #3f6212; --bg: #f7f9f2; --card: #e9f0dc; --ink: #1c2a0c; --muted: #4f5b43; --highlight: #3f6212; }
+:root[data-theme='noche'] { --accent: #4338ca; --bg: #f5f5fb; --card: #e8e9f6; --ink: #1b1c3a; --muted: #4b4f6b; --highlight: #4338ca; }
+/* Neon is dark-only in the app. */
+:root[data-theme='neon'] { --accent: #22b8ff; --on-accent: #0a0b1e; --bg: #0a0b1e; --card: #171936; --ink: #f1f2ff; --muted: #a9aed6; --highlight: #ff4fa3; color-scheme: dark; }
+
+@media (prefers-color-scheme: dark) {
+  :root { --accent: #7dd3fc; --on-accent: #001f2e; --bg: #0b111c; --card: #141c2e; --ink: #ecf2f8; --muted: #9fb0c2; --highlight: #7dd3fc; color-scheme: dark; }
+  :root[data-theme='sakura'] { --accent: #f9a8d4; --on-accent: #4a0a26; --bg: #1a0f14; --card: #2a1720; --ink: #fdeef5; --muted: #c9a9b6; --highlight: #f9a8d4; }
+  :root[data-theme='matcha'] { --accent: #a3d977; --on-accent: #132009; --bg: #0f140c; --card: #1b2416; --ink: #eef5e6; --muted: #a9b59b; --highlight: #a3d977; }
+  :root[data-theme='noche'] { --accent: #a5b4fc; --on-accent: #1e1b4b; --bg: #0b0d1a; --card: #171a2e; --ink: #eeeffb; --muted: #a3a8c8; --highlight: #a5b4fc; }
+  :root[data-theme='neon'] { --accent: #22b8ff; --on-accent: #0a0b1e; --bg: #0a0b1e; --card: #171936; --ink: #f1f2ff; --muted: #a9aed6; --highlight: #ff4fa3; }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 500 17px/1.65 var(--body);
+  transition: background-color 0.4s, color 0.4s;
+  overflow-x: hidden;
+}
+img { max-width: 100%; height: auto; display: block; }
+a { color: var(--accent); }
+h1, h2, h3 { font-family: var(--display); line-height: 1.08; letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+p { margin: 0; text-wrap: pretty; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--highlight); outline-offset: 3px; border-radius: 6px; }
+.wrap { width: min(1120px, 100% - 40px); margin-inline: auto; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* Header */
+.site-header {
+  position: sticky; top: 0; z-index: 50;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: saturate(1.4) blur(14px);
+  -webkit-backdrop-filter: saturate(1.4) blur(14px);
+  border-bottom: 1px solid var(--line);
+}
+.site-header .wrap { display: flex; align-items: center; gap: 18px; min-height: 60px; }
+.brand { display: flex; align-items: center; gap: 10px; font: 800 20px var(--display); color: var(--ink); text-decoration: none; margin-right: auto; }
+.brand img { width: 32px; height: 32px; border-radius: 8px; }
+.brand span { font: 700 15px var(--body); color: var(--muted); }
+.site-header nav { display: flex; gap: 18px; }
+.site-header nav a, .lang { color: var(--muted); text-decoration: none; font-size: 15px; font-weight: 700; }
+.site-header nav a:hover, .lang:hover { color: var(--accent); }
+.lang { border: 1.5px solid var(--line); border-radius: 999px; padding: 4px 12px; }
+@media (max-width: 640px) { .site-header nav { display: none; } }
+
+/* Footer */
+.site-footer { border-top: 1px solid var(--line); padding: 36px 0 48px; color: var(--muted); font-size: 15px; }
+.site-footer .wrap { display: grid; gap: 14px; }
+.site-footer nav { display: flex; flex-wrap: wrap; gap: 8px 22px; }
+.site-footer a { color: var(--muted); font-weight: 700; }
+
+/* Store buttons */
+.store-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.store {
+  display: inline-flex; flex-direction: column; justify-content: center;
+  padding: 9px 26px 10px; border-radius: 16px; text-decoration: none; line-height: 1.1;
+  background: #0b0b0f; color: #fff; border: 1.5px solid rgba(255, 255, 255, 0.28);
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.25);
+}
+.store:hover { transform: translateY(-2px); box-shadow: 0 8px 0 rgba(0, 0, 0, 0.25); }
+.store:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25); }
+.store small { font-size: 12px; font-weight: 500; opacity: 0.85; }
+.store b { font: 700 22px var(--display); letter-spacing: -0.01em; }
+.store.soon { background: transparent; color: inherit; border: 1.5px dashed currentColor; box-shadow: none; opacity: 0.75; cursor: default; }
+.store.soon:hover { transform: none; }
+
+/* Legal / document pages */
+.doc { width: min(720px, 100% - 40px); margin: 0 auto; padding: 56px 0 80px; }
+.doc h1 { font-size: clamp(34px, 6vw, 52px); margin-bottom: 12px; }
+.doc h2 { font-size: 24px; margin: 40px 0 8px; }
+.doc h3 { font-size: 19px; margin: 28px 0 6px; }
+.doc p, .doc ul { margin: 0 0 14px; }
+.doc .meta { color: var(--muted); }
+.doc li { margin-bottom: 10px; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

@@ -87,45 +87,51 @@ const data = { mascot, cards: t.cards, demo: t.demo, type: t.jp.type, days: t.fs
           </div>
           <div class="review" id="review">
             <div class="review-top">
-              <span class="pill"><b id="review-left">{t.cards.length}</b> {t.demo.left}</span>
               <label class="switch">
                 <input type="checkbox" id="furigana-toggle" checked />
                 <span class="track"></span>
                 {t.demo.furigana}
               </label>
             </div>
-            <div class="card-stage" id="card-stage">
+            <div class="card-stage">
+              <!-- Mirrors the app's review card: one raised surface that turns over and then shows
+                   the answer under the question. -->
               <div class="flashcard" id="flashcard" tabindex="0" role="button" aria-label={t.demo.flip}>
-                <div class="face front">
+                <p class="counts" aria-label={t.demo.left}>
+                  <span class="c-new"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4z" fill="currentColor"></path></svg><b id="count-new">0</b></span>
+                  <span class="c-learn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a8 8 0 1 0 8 8" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path></svg><b id="count-learn">0</b></span>
+                  <span class="c-review"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg><b id="count-review">0</b></span>
+                </p>
+                <div class="card-body" id="card-body">
                   <p class="expr" id="card-front" lang="ja"></p>
-                  <button class="speak" id="speak" type="button" aria-label={t.demo.listen}>
-                    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-                      <path
-                        d="M4 9v6h4l5 4V5L8 9H4zm12.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"
-                        fill="currentColor"></path>
-                    </svg>
-                  </button>
+                  <div class="answer" id="card-answer">
+                    <hr />
+                    <p class="meaning" id="card-meaning"></p>
+                    <p class="example"><span id="card-ex" lang="ja"></span><small id="card-ext"></small></p>
+                    <button class="glass speak" id="speak" type="button" aria-label={t.demo.listen}>
+                      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                        <path
+                          d="M4 9v6h4l5 4V5L8 9H4zm12.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"
+                          fill="currentColor"></path>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
-                <div class="face back">
-                  <p class="expr small" id="card-back" lang="ja"></p>
-                  <p class="meaning" id="card-meaning"></p>
-                  <p class="example"><span id="card-ex" lang="ja"></span><small id="card-ext"></small></p>
+                <div class="done" id="review-done" hidden>
+                  <h3>{t.demo.doneTitle}</h3>
+                  <p>{t.demo.doneText}</p>
+                  <button class="glass prominent" id="review-reset" type="button">{t.demo.again}</button>
                 </div>
-              </div>
-              <div class="done" id="review-done" hidden>
-                <h3>{t.demo.doneTitle}</h3>
-                <p>{t.demo.doneText}</p>
-                <button class="btn" id="review-reset" type="button">{t.demo.again}</button>
               </div>
             </div>
             <div class="review-actions">
-              <button class="btn wide" id="flip-btn" type="button">{t.demo.flip}</button>
+              <button class="glass prominent wide" id="flip-btn" type="button">{t.demo.flip}</button>
               <div class="grades" id="grades" hidden>
                 {
                   t.demo.grades.map((g, i) => (
-                    <button type="button" class={`grade g${i}`} data-grade={i}>
-                      <small />
+                    <button type="button" class={`glass grade g${i}`} data-grade={i}>
                       <b>{g}</b>
+                      <small />
                     </button>
                   ))
                 }

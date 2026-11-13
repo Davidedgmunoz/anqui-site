@@ -115,10 +115,10 @@ function hero() {
 function demo() {
   const root = $('review');
   const card = $('flashcard');
+  const body = $('card-body');
   const flipBtn = $('flip-btn');
   const grades = $('grades');
   const done = $('review-done');
-  const left = $('review-left');
   const speak = $<HTMLButtonElement>('speak');
   const mascot = $<HTMLImageElement>('demo-mascot');
   const bubble = $('demo-bubble');
@@ -132,7 +132,7 @@ function demo() {
   const POSE: Record<Mood, string> = { idle: 'studying', good: 'happy', again: 'teaching', hard: 'searching', done: 'sleeping', theme: 'happy' };
 
   let queue: { card: Card; seen: number }[] = [];
-  let flipped = false;
+  let revealed = false;
   let busy = false;
   let moodTimer = 0;
 
@@ -151,51 +151,65 @@ function demo() {
   }
   document.addEventListener('anqui:theme', () => mood('theme', 1500));
 
+  function setRevealed(value: boolean) {
+    revealed = value;
+    card.classList.toggle('revealed', value);
+    const finished = !queue.length;
+    flipBtn.hidden = value || finished;
+    grades.hidden = !value || finished;
+  }
+
   function render() {
-    left.textContent = String(queue.length);
+    $('count-new').textContent = String(queue.filter((q) => q.seen === 0).length);
+    $('count-learn').textContent = String(queue.filter((q) => q.seen > 0).length);
     const current = queue[0];
-    const finished = !current;
-    done.hidden = !finished;
-    card.hidden = finished;
-    flipBtn.hidden = finished;
-    grades.hidden = true;
-    if (finished) return;
+    done.hidden = !!current;
+    body.hidden = !current;
+    setRevealed(false);
+    if (!current) return;
     $('card-front').innerHTML = ruby(current.card.front);
-    $('card-back').innerHTML = ruby(current.card.front);
     $('card-meaning').textContent = current.card.meaning;
     $('card-ex').innerHTML = ruby(current.card.ex);
     $('card-ext').textContent = current.card.exT;
     const labels = INTERVALS[Math.min(current.seen, 1)];
     gradeButtons.forEach((b, i) => (b.querySelector('small')!.textContent = labels[i]));
-    flipped = false;
-    gsap.set(card, { rotationY: 0 });
   }
 
-  function flip() {
-    if (busy || !queue.length) return;
-    flipped = !flipped;
-    gsap.to(card, { rotationY: flipped ? 180 : 0, duration: reduced ? 0 : 0.6, ease: 'back.out(1.3)' });
-    flipBtn.hidden = flipped;
-    grades.hidden = !flipped;
+  /** Turns the card over like the app: the answer appears when the card is edge-on. */
+  function reveal() {
+    if (busy || revealed || !queue.length) return;
+    if (reduced) return setRevealed(true);
+    busy = true;
+    // The buttons change at once; the card catches up.
+    flipBtn.hidden = true;
+    grades.hidden = false;
+    gsap
+      .timeline({ onComplete: () => (busy = false) })
+      .to(card, { rotationY: 90, duration: 0.17, ease: 'power2.in' })
+      .add(() => setRevealed(true))
+      .set(card, { rotationY: -90 })
+      .to(card, { rotationY: 0, duration: 0.3, ease: 'power2.out' });
+    gsap.from(gradeButtons, { y: 14, opacity: 0, duration: 0.35, stagger: 0.04, ease: 'back.out(2)' });
   }
 
   function grade(g: number) {
-    if (busy || !flipped || !queue.length) return;
+    if (!revealed || !queue.length) return;
+    // A grade during the flip lands on the finished card.
+    gsap.getTweensOf(card).forEach((t) => t.progress(1));
+    gsap.set(card, { rotationY: 0 });
     busy = true;
     const current = queue.shift()!;
     // Again and Hard keep the card in learning; Good graduates it on its second pass; Easy right away.
     if (g <= 1 || (g === 2 && current.seen === 0)) queue.push({ card: current.card, seen: current.seen + 1 });
-    gradeButtons[g].classList.add('pressed');
     const next = () => {
-      gradeButtons[g].classList.remove('pressed');
       render();
       busy = false;
       mood(g === 0 ? 'again' : g === 1 ? 'hard' : 'good', queue.length ? 1700 : 1100);
-      if (!reduced) gsap.fromTo(queue.length ? card : done, { y: 40, opacity: 0, x: 0, rotate: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: 'back.out(1.6)' });
-      else gsap.set(card, { x: 0, opacity: 1, rotate: 0 });
+      if (!reduced) gsap.fromTo([body, done], { opacity: 0 }, { opacity: 1, duration: 0.2 });
     };
     if (reduced) return next();
-    gsap.to(card, { x: g === 0 ? -260 : 260, rotate: g === 0 ? -14 : 14, opacity: 0, duration: 0.32, ease: 'power2.in', onComplete: next });
+    // The next card cross-fades inside the same surface; the surface stays still.
+    gsap.to(body, { opacity: 0, duration: 0.15, onComplete: next });
   }
 
   function start() {
@@ -205,14 +219,23 @@ function demo() {
   }
 
   card.addEventListener('click', (e) => {
-    if (!(e.target as Element).closest('.speak')) flip();
+    if (!(e.target as Element).closest('button')) reveal();
   });
-  flipBtn.addEventListener('click', flip);
+  flipBtn.addEventListener('click', reveal);
   gradeButtons.forEach((b, i) => b.addEventListener('click', () => grade(i)));
   $('review-reset').addEventListener('click', start);
   $<HTMLInputElement>('furigana-toggle').addEventListener('change', (e) => {
     root.classList.toggle('no-furigana', !(e.target as HTMLInputElement).checked);
   });
+
+  // Glass highlight follows the pointer.
+  for (const el of root.querySelectorAll<HTMLElement>('.glass')) {
+    el.addEventListener('pointermove', (e) => {
+      const r = el.getBoundingClientRect();
+      el.style.setProperty('--mx', `${e.clientX - r.left}px`);
+      el.style.setProperty('--my', `${e.clientY - r.top}px`);
+    });
+  }
 
   // Same shortcuts as the app on iPad, only while the demo is on screen.
   let onScreen = false;
@@ -223,8 +246,11 @@ function demo() {
     if (target.matches('input, textarea, select, a') || (target.matches('button') && e.key === ' ')) return;
     if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
-      flip();
-    } else if (/^[1-4]$/.test(e.key)) {
+      reveal();
+    } else if (/^[1-4]$/.test(e.key) && revealed) {
+      const button = gradeButtons[Number(e.key) - 1];
+      button.classList.add('pressed');
+      setTimeout(() => button.classList.remove('pressed'), 160);
       grade(Number(e.key) - 1);
     }
   });

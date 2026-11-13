@@ -16,6 +16,7 @@ interface Data {
   demo: { bubbles: Record<Mood, string>; bubbleNotes: Record<Mood, string> };
   type: { ok: string };
   days: string;
+  companion: Record<string, [string, string]>;
 }
 
 const data: Data = JSON.parse(document.getElementById('anqui-data')!.textContent!);
@@ -160,8 +161,11 @@ function demo() {
   }
 
   function render() {
-    $('count-new').textContent = String(queue.filter((q) => q.seen === 0).length);
-    $('count-learn').textContent = String(queue.filter((q) => q.seen > 0).length);
+    const fresh = queue.filter((q) => q.seen === 0).length;
+    const learning = queue.length - fresh;
+    $('count-new').textContent = String(fresh);
+    $('count-learn').textContent = String(learning);
+    document.dispatchEvent(new CustomEvent('anqui:counts', { detail: { fresh, learning } }));
     const current = queue[0];
     done.hidden = !!current;
     body.hidden = !current;
@@ -475,9 +479,139 @@ function themes() {
   mark();
 }
 
+
+// ---------------------------------------------------------------- Widgets
+function widgets() {
+  const total = data.cards.length;
+  const set = (id: string, fraction: number) => ($(id).style.strokeDashoffset = String(100 - Math.max(0, Math.min(1, fraction)) * 100));
+  // The rings fill as the demo's cards leave "new" and then leave learning.
+  document.addEventListener('anqui:counts', (e) => {
+    const { fresh, learning } = (e as CustomEvent<{ fresh: number; learning: number }>).detail;
+    $('widget-due').textContent = String(fresh + learning);
+    $('widget-new').textContent = String(fresh);
+    $('widget-learn').textContent = String(learning);
+    set('ring-new', (total - fresh) / total);
+    set('ring-learn', (total - fresh - learning) / total);
+    set('ring-review', fresh + learning === 0 ? 1 : 0.6);
+  });
+
+  const word = $('widget-word');
+  const meaning = $('widget-meaning');
+  let index = 0;
+  const show = () => {
+    const card = data.cards[index++ % total];
+    word.innerHTML = ruby(card.front);
+    meaning.textContent = card.meaning;
+    if (!reduced) gsap.fromTo([word, meaning], { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4, stagger: 0.06 });
+  };
+  show();
+  setInterval(show, 3600);
+}
+
+// ---------------------------------------------------------------- Kana chart
+function kanaChart() {
+  const grid = $('kana-grid');
+  const cells = [...grid.querySelectorAll<HTMLButtonElement>('.kana-cell')];
+  const tabs = [...document.querySelectorAll<HTMLButtonElement>('.segmented button')];
+  let script: 'h' | 'k' = 'h';
+
+  for (const tab of tabs) {
+    tab.addEventListener('click', () => {
+      script = tab.dataset.script as 'h' | 'k';
+      for (const other of tabs) other.setAttribute('aria-checked', String(other === tab));
+      cells.forEach((cell, i) => {
+        const swap = () => (cell.querySelector('.ch')!.textContent = cell.dataset[script]!);
+        if (reduced) return swap();
+        // A wave across the chart: each kana turns over into the other script.
+        gsap
+          .timeline({ delay: Math.floor(i / 5) * 0.035 + (i % 5) * 0.015 })
+          .to(cell, { rotationX: 90, duration: 0.14, ease: 'power2.in' })
+          .add(swap)
+          .to(cell, { rotationX: 0, duration: 0.3, ease: 'back.out(2)' });
+      });
+    });
+  }
+
+  for (const cell of cells) {
+    cell.addEventListener('click', () => {
+      // Touch has no hover: show the romaji for a moment.
+      cell.classList.add('on');
+      setTimeout(() => cell.classList.remove('on'), 900);
+      if (!('speechSynthesis' in window)) return;
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(cell.dataset.h!);
+      u.lang = 'ja-JP';
+      u.rate = 0.85;
+      speechSynthesis.speak(u);
+    });
+  }
+}
+
+// ---------------------------------------------------------------- Roadmap
+function roadmap() {
+  const rail = $('rail');
+  const stops = [...rail.querySelectorAll<HTMLElement>('.stop')];
+  const update = (p: number) => {
+    rail.style.setProperty('--p', p.toFixed(3));
+    stops.forEach((stop, i) => stop.classList.toggle('passed', p >= i / stops.length - 0.02));
+  };
+  if (reduced) return update(0);
+  ScrollTrigger.create({ trigger: rail, start: 'top 80%', end: 'bottom 45%', scrub: 0.5, onUpdate: (self) => update(self.progress) });
+  gsap.from(stops, { opacity: 0, y: 30, duration: 0.6, stagger: 0.12, ease: 'power3.out', scrollTrigger: { trigger: rail, start: 'top 80%' } });
+}
+
+// ---------------------------------------------------------------- Scroll companion
+function companion() {
+  const el = $('companion');
+  const img = el.querySelector('img')!;
+  const bubble = el.querySelector('.bubble')!;
+  const POSES: Record<string, string> = { fsrs: 'teaching', japanese: 'studying', habit: 'happy', kana: 'teaching', themes: 'happy', more: 'searching', roadmap: 'waving' };
+  const sections = Object.keys(POSES).map((id) => $(id));
+  let current = '';
+  let hideTimer = 0;
+  let queued = false;
+
+  function update() {
+    queued = false;
+    const middle = innerHeight / 2;
+    const active = sections.find((s) => {
+      const r = s.getBoundingClientRect();
+      return r.top <= middle && r.bottom > middle;
+    });
+    const id = active?.id ?? '';
+    if (id === current) return;
+    current = id;
+    el.classList.toggle('show', !!id);
+    if (!id) return;
+    img.src = data.mascot[POSES[id]];
+    const [jp, note] = data.companion[id];
+    bubble.querySelector('b')!.textContent = jp;
+    bubble.querySelector('i')!.textContent = note;
+    bubble.classList.add('show');
+    clearTimeout(hideTimer);
+    hideTimer = window.setTimeout(() => bubble.classList.remove('show'), 2600);
+    if (!reduced) gsap.fromTo(img, { scale: 0.8, rotate: -8 }, { scale: 1, rotate: 0, duration: 0.6, ease: 'elastic.out(1.1, 0.45)' });
+  }
+  addEventListener(
+    'scroll',
+    () => {
+      if (!queued) {
+        queued = true;
+        requestAnimationFrame(update);
+      }
+    },
+    { passive: true },
+  );
+  update();
+}
+
 hero();
+widgets();
 demo();
 curve();
 typing();
 habit();
+kanaChart();
+roadmap();
+companion();
 themes();

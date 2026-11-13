@@ -32,7 +32,19 @@ const shot = await getImage({ src: lang === 'es' ? shotEs : shotEn, width: 720, 
 const themes = ['anqui', 'sakura', 'matcha', 'noche', 'neon'] as const;
 const floaters = ['あ', '学', 'ね', '猫', 'カ', '記', 'を', '語', 'ん', '暗'];
 // Everything the client script needs that depends on the language or on hashed asset URLs.
-const data = { mascot, cards: t.cards, demo: t.demo, type: t.jp.type, days: t.fsrs.days };
+const data = { mascot, cards: t.cards, demo: t.demo, type: t.jp.type, days: t.fsrs.days, companion: t.companion };
+
+// Gojuon chart, one column per consonant; null leaves the gap the traditional table has.
+const kanaColumns: [string, string][] = [
+  ['あいうえお', 'a i u e o'], ['かきくけこ', 'ka ki ku ke ko'], ['さしすせそ', 'sa shi su se so'], ['たちつてと', 'ta chi tsu te to'],
+  ['なにぬねの', 'na ni nu ne no'], ['はひふへほ', 'ha hi fu he ho'], ['まみむめも', 'ma mi mu me mo'], ['や＿ゆ＿よ', 'ya _ yu _ yo'],
+  ['らりるれろ', 'ra ri ru re ro'], ['わ＿＿＿を', 'wa _ _ _ wo'], ['ん＿＿＿＿', 'n _ _ _ _'],
+];
+const kana = kanaColumns.flatMap(([chars, romaji]) => {
+  const r = romaji.split(' ');
+  return [...chars].map((h, i) => (h === '＿' ? null : { h, k: String.fromCodePoint(h.codePointAt(0)! + 0x60), r: r[i] }));
+});
+const stopClass = ['live', 'testing', 'dev', 'later'];
 ---
 
 <Base lang={lang}>
@@ -242,6 +254,30 @@ const data = { mascot, cards: t.cards, demo: t.demo, type: t.jp.type, days: t.fs
           <h2>{t.habit.h2}</h2>
           <p>{t.habit.lead}</p>
           <p class="streak"><b id="streak-count" data-to="30">0</b><span>{t.habit.streak}</span></p>
+          <div class="widgets" id="widgets" aria-hidden="true">
+            <div class="widget w-rings">
+              <svg viewBox="0 0 120 120">
+                <circle class="ring-bg" cx="60" cy="60" r="52"></circle>
+                <circle class="ring r-new" id="ring-new" cx="60" cy="60" r="52" pathLength="100"></circle>
+                <circle class="ring-bg" cx="60" cy="60" r="40"></circle>
+                <circle class="ring r-learn" id="ring-learn" cx="60" cy="60" r="40" pathLength="100"></circle>
+                <circle class="ring-bg" cx="60" cy="60" r="28"></circle>
+                <circle class="ring r-review" id="ring-review" cx="60" cy="60" r="28" pathLength="100"></circle>
+                <path class="flame" d="M60 45c5 6 9 9 9 15a9 9 0 0 1-18 0c0-3 1-5 3-7 0 3 2 4 3 4 1-4 1-8 3-12z"></path>
+              </svg>
+              <div>
+                <small>{t.widgets.today}</small>
+                <b id="widget-due">{t.cards.length}</b>
+                <span class="w-row"><i class="c-new" id="widget-new">{t.cards.length}</i><i class="c-learn" id="widget-learn">0</i><i class="c-review">0</i></span>
+              </div>
+            </div>
+            <div class="widget w-word">
+              <small>{t.widgets.word}</small>
+              <b id="widget-word" lang="ja"></b>
+              <span id="widget-meaning"></span>
+            </div>
+          </div>
+          <p class="fine">{t.widgets.hint}</p>
         </header>
         <div class="reveal">
           <div class="heatmap" id="heatmap" aria-hidden="true"></div>
@@ -249,6 +285,35 @@ const data = { mascot, cards: t.cards, demo: t.demo, type: t.jp.type, days: t.fs
           <div class="medals" id="medals">
             {medals.map((src) => <div class="medal"><img src={src} alt="" width="280" height="280" loading="lazy" /></div>)}
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Kana chart (1.1) -->
+    <section class="section kana" id="kana">
+      <div class="wrap">
+        <header class="section-head reveal">
+          <p class="kicker soon">{t.kana.kicker}</p>
+          <h2>{t.kana.h2}</h2>
+          <p>{t.kana.lead}</p>
+        </header>
+        <div class="segmented reveal" role="radiogroup" aria-label={t.kana.h2}>
+          <button type="button" role="radio" aria-checked="true" data-script="h">{t.kana.hira}</button>
+          <button type="button" role="radio" aria-checked="false" data-script="k">{t.kana.kata}</button>
+        </div>
+        <div class="kana-grid reveal" id="kana-grid" lang="ja">
+          {
+            kana.map((c) =>
+              c ? (
+                <button type="button" class="kana-cell" data-h={c.h} data-k={c.k} aria-label={`${c.h} ${c.r}`}>
+                  <span class="ch">{c.h}</span>
+                  <span class="ro" lang="en">{c.r}</span>
+                </button>
+              ) : (
+                <span class="kana-gap" />
+              ),
+            )
+          }
         </div>
       </div>
     </section>
@@ -275,7 +340,7 @@ const data = { mascot, cards: t.cards, demo: t.demo, type: t.jp.type, days: t.fs
     </section>
 
     <!-- Everything else -->
-    <section class="section more">
+    <section class="section more" id="more">
       <div class="wrap">
         <header class="section-head reveal"><h2>{t.more.h2}</h2></header>
         <div class="more-grid">
@@ -289,6 +354,66 @@ const data = { mascot, cards: t.cards, demo: t.demo, type: t.jp.type, days: t.fs
             ))
           }
         </div>
+      </div>
+    </section>
+
+    <!-- Roadmap -->
+    <section class="section roadmap" id="roadmap">
+      <div class="wrap">
+        <header class="section-head reveal">
+          <p class="kicker">{t.road.kicker}</p>
+          <h2>{t.road.h2}</h2>
+          <p>{t.road.lead}</p>
+        </header>
+        <!-- A train line: one station per version, and the cat rides it as the page scrolls. -->
+        <div class="rail" id="rail">
+          <div class="track" aria-hidden="true">
+            <i class="track-done"></i>
+            <img class="train" src={mascot.fixing} alt="" width="480" height="480" loading="lazy" />
+          </div>
+          <ol class="stops">
+            {
+              t.road.stops.map((stop, i) => (
+                <li class={`stop ${stopClass[i]}`}>
+                  <span class="station" aria-hidden="true" />
+                  <p class="version" lang={i === 3 ? 'ja' : undefined}>{stop.v}</p>
+                  <p class="state">{stop.state}</p>
+                  <ul>{stop.items.map((item) => <li>{item}</li>)}</ul>
+                </li>
+              ))
+            }
+          </ol>
+        </div>
+        <div class="devices">
+          <article class="tile device reveal">
+            <div class="watch" aria-hidden="true">
+              <div class="watch-screen">
+                <small>Anqui</small>
+                <b lang="ja"><ruby>猫<rt>ねこ</rt></ruby></b>
+                <span>{t.cards[1].meaning}</span>
+                <i>30 · {t.road.watch.streak}</i>
+              </div>
+            </div>
+            <div>
+              <p class="kicker soon">{t.road.soon}</p>
+              <h3>{t.road.watch.t}</h3>
+              <p>{t.road.watch.d}</p>
+            </div>
+          </article>
+          <article class="tile device reveal">
+            <div class="macwin" aria-hidden="true">
+              <div class="macbar"><i></i><i></i><i></i></div>
+              <img src={mascot.fixing} alt="" width="480" height="480" loading="lazy" />
+              <span>{t.road.mac.wip}</span>
+            </div>
+            <div>
+              <p class="kicker soon">{t.road.soon}</p>
+              <h3>{t.road.mac.t}</h3>
+              <p>{t.road.mac.d}</p>
+            </div>
+          </article>
+        </div>
+        <p class="fine road-note">{t.road.note}</p>
       </div>
     </section>
 
@@ -319,6 +444,11 @@ const data = { mascot, cards: t.cards, demo: t.demo, type: t.jp.type, days: t.fs
         <StoreButtons lang={lang} />
       </div>
     </section>
+    <!-- The cat that follows the reader down the page. -->
+    <div class="companion" id="companion" aria-hidden="true">
+      <span class="bubble"><b lang="ja"></b><i></i></span>
+      <img src={mascot.waving} alt="" width="480" height="480" />
+    </div>
   </main>
   <script type="application/json" id="anqui-data" set:html={JSON.stringify(data)} />
   <script>

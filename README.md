@@ -28,3 +28,22 @@ In the repository settings, Pages → Source must be "GitHub Actions".
 
 The contact address lives in every `support` and `privacy` fragment.
 Update the privacy policy before shipping any change that collects data (e.g. analytics).
+
+## Custom domain
+
+The domain is configured in one place: `SITE_URL` and `SITE_BASE` (read in `astro.config.mjs`, defaulting to
+`https://davidedgmunoz.github.io` and `/anqui-site`). To move to a custom domain:
+
+1. At the registrar, point DNS at GitHub Pages (an `A`/`AAAA` apex record or a `CNAME` for a subdomain), and set the
+   custom domain in the repository settings (Pages).
+2. Add `public/CNAME` containing the bare domain (e.g. `anqui.example.com`).
+3. In `.github/workflows/deploy.yml`, uncomment the `env` block of the build step and set `SITE_URL` to the new
+   origin and `SITE_BASE: /`. Check locally with `SITE_URL=https://example.com SITE_BASE=/ npm run build`.
+4. In the app repo, update the three URLs in `fastlane/metadata/*/{marketing,support,privacy}_url.txt` and run
+   `make metadata`.
+
+Notes:
+
+- `robots.txt` is generated at build time and points at the sitemap index. Crawlers only honor it at a domain root, so
+  on the github.io project path it has no effect until a custom domain is set.
+- After the switch, submit `sitemap-index.xml` in Google Search Console.

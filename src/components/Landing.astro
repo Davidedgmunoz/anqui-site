@@ -3,7 +3,7 @@ import { getImage } from 'astro:assets';
 import Base from '../layouts/Base.astro';
 import StoreButtons from './StoreButtons.astro';
 import '../styles/landing.css';
-import { strings, href, type Lang } from '../i18n';
+import { strings, href, APP_STORE_URL, type Lang } from '../i18n';
 import shotEs from '../assets/shots/decks-es.png';
 import shotEn from '../assets/shots/decks-en.png';
 
@@ -45,9 +45,26 @@ const kana = kanaColumns.flatMap(([chars, romaji]) => {
   return [...chars].map((h, i) => (h === '＿' ? null : { h, k: String.fromCodePoint(h.codePointAt(0)! + 0x60), r: r[i] }));
 });
 const stopClass = ['live', 'testing', 'dev', 'later'];
+
+// schema.org structured data; no price, offers or ratings on purpose.
+const siteBase = import.meta.env.BASE_URL.replace(/\/$/, '');
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Anqui',
+  applicationCategory: 'EducationalApplication',
+  operatingSystem: 'iOS, iPadOS',
+  description: t.description,
+  inLanguage: lang,
+  url: new URL(href(lang), Astro.site).href,
+  downloadUrl: APP_STORE_URL,
+  installUrl: APP_STORE_URL,
+  image: new URL(`${siteBase}/og-${lang}.png`, Astro.site).href,
+};
 ---
 
 <Base lang={lang}>
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />
   <main>
     <!-- Hero -->
     <section class="hero">

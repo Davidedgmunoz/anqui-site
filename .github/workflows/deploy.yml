@@ -25,6 +25,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+        # Custom domain: uncomment and set the values (also add public/CNAME).
+        # env:
+        #   SITE_URL: https://example.com
+        #   SITE_BASE: /
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
